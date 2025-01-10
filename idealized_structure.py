@@ -8,23 +8,30 @@ A = np.pi * radius**2
 skin_thickness = 0.5  # mm
 n_stringers = 8
 unsupported_skin_length = (2 * np.pi * radius) / n_stringers
-stringer_area = 1  # mm^2
+stringer_area = 1 # mm^2
 
-neutral_line_offset = np.sin(np.deg2rad(-30)) * radius
-d1 = np.sin(np.deg2rad(67.5)) * radius - neutral_line_offset
-d2 = np.sin(np.deg2rad(22.5)) * radius - neutral_line_offset
-d3 = np.sin(np.deg2rad(-22.5)) * radius - neutral_line_offset
-d4 = np.sin(np.deg2rad(-67.5)) * radius - neutral_line_offset
+neutral_line_offset = np.sin(np.deg2rad(30)) * radius
+# print(f"Neutral line offset: {neutral_line_offset}")
+# neutral_line_offset = 0
+d1 = np.sin(np.deg2rad(67.5)) * radius + neutral_line_offset
+d2 = np.sin(np.deg2rad(22.5)) * radius + neutral_line_offset
+d3 = np.sin(np.deg2rad(-22.5)) * radius + neutral_line_offset
+d4 = np.sin(np.deg2rad(-67.5)) * radius + neutral_line_offset
+
+# print(f"ds{d1, d2, d3, d4}")
 
 d1_b = np.sin(np.deg2rad(67.5)) * radius + radius
 d2_b = np.sin(np.deg2rad(22.5)) * radius + radius
 d3_b = np.sin(np.deg2rad(-22.5)) * radius + radius
 d4_b = np.sin(np.deg2rad(-67.5)) * radius + radius
+# print(f"dbs{d1_b, d2_b, d3_b, d4_b}")
 
 model_factor = 1.5
-maximum_lift = 998.44  # N
-maximum_drag = 152.01  # N
+maximum_lift = 999  # N
+maximum_drag = 153  # N
 moment = maximum_lift * model_factor * forward_return_module_length / 1000 / 4  # Nm
+# moment = 855 * model_factor # Nm
+
 
 # Calculating the cross sectional area for the stringers
 b1 = stringer_area + 1 * 115 / 6 * (2 + d1 / d1) + 1 * 115 / 6 * (2 + d2 / d1)  # mm^2
@@ -32,10 +39,14 @@ b2 = stringer_area + 1 * 115 / 6 * (2 + d1 / d2) + 1 * 115 / 6 * (2 + d3 / d2)  
 b3 = stringer_area + 1 * 115 / 6 * (2 + d2 / d3) + 1 * 115 / 6 * (2 + d4 / d3)  # mm^2
 b4 = stringer_area + 1 * 115 / 6 * (2 + d3 / d4) + 1 * 115 / 6 * (2 + d4 / d4)  # mm^2
 
+print(f"Areas: {b1, b2, b3, b4}")
+
 # Centroid location from the bottom
 centroid = (2 * b1 * d1_b + 2 * b2 * d2_b + 2 * b3 * d3_b + 2 * d4_b) / (
     2 * d1 + 2 * d2 + 2 * d3 + 2 * b4
 )
+
+# print(f"Centroid: {centroid}")
 
 y1 = d1_b - centroid
 y2 = d2_b - centroid
@@ -51,6 +62,7 @@ ixx_2 = b2 * (y2) ** 2  # mm^4
 ixx_3 = b3 * (y3) ** 2  # mm^4
 ixx_4 = b4 * (y4) ** 2  # mm^4
 ixx = (ixx_1 + ixx_2 + ixx_3 + ixx_4) * 2  # mm^4
+print(f"Ixx: {ixx}")
 
 σ1_moment = moment * y1 / ixx  # N/mm^2 aka MPa
 σ2_moment = moment * y2 / ixx  # N/mm^2
@@ -58,6 +70,10 @@ ixx = (ixx_1 + ixx_2 + ixx_3 + ixx_4) * 2  # mm^4
 σ4_moment = moment * y4 / ixx  # N/mm^2
 σ = np.array([σ1_moment, σ2_moment, σ3_moment, σ4_moment])
 σ_max = np.max(np.abs(σ))
+print("y's, moments")
+print(y1, y2, y3, y4)
+print(σ)
+print(σ_max)
 
 ### Shear
 
@@ -72,6 +88,8 @@ q45 = factor * b4 * y4 + q34
 q56 = factor * b4 * y4 + q45
 q67 = factor * b3 * y3 + q56
 q78 = factor * b2 * y2 + q67
+print("Shear flow")
+print(q18, q12, q23, q34, q45, q56, q67, q78)
 
 # Correction through moment
 qs0 = (
@@ -92,9 +110,12 @@ qs0 = (
     - q18 * (x1 + x1) * y1
     + q18 * (y1 - y1) * x1
 ) / (2 * A)
+print("Moment correction")
+print(qs0)
 
 qs = np.array([q18, q12, q23, q34, q45, q56, q67, q78])
 qs = qs + qs0
+print(qs)
 max_q = np.max(np.abs(qs))
 
 tau = max_q / skin_thickness  # N/mm^2
