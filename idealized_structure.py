@@ -5,7 +5,7 @@ radius = diameter / 2
 forward_return_module_length = 100  # mm
 A = np.pi * radius**2
 
-skin_thickness = 1  # mm
+skin_thickness = 0.5  # mm
 n_stringers = 8
 unsupported_skin_length = (2 * np.pi * radius) / n_stringers
 stringer_area = 1  # mm^2
@@ -50,7 +50,7 @@ ixx_1 = b1 * (y1) ** 2  # mm^4
 ixx_2 = b2 * (y2) ** 2  # mm^4
 ixx_3 = b3 * (y3) ** 2  # mm^4
 ixx_4 = b4 * (y4) ** 2  # mm^4
-ixx = ixx_1 + ixx_2 + ixx_3 + ixx_4  # mm^4
+ixx = (ixx_1 + ixx_2 + ixx_3 + ixx_4) * 2  # mm^4
 
 σ1_moment = moment * y1 / ixx  # N/mm^2 aka MPa
 σ2_moment = moment * y2 / ixx  # N/mm^2
