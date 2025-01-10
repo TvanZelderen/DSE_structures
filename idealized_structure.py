@@ -100,4 +100,28 @@ max_q = np.max(np.abs(qs))
 tau = max_q / skin_thickness  # N/mm^2
 
 von_mises = np.sqrt(σ_max**2 + 3 * tau**2)  # N/mm^2
-print(von_mises)
+print(f"Skin stress: {von_mises:.2f} MPa")
+print(f"Skin SF: {240 / von_mises:.2f}. Aluminium 6061 T6")
+print(f"Skin thickness: {skin_thickness} mm\n")
+
+### Wing attachement stringers
+
+stringer_t = 1 # mm
+stringer_r = 12 # mm
+stringer_A = np.pi * (stringer_r**2 - (stringer_r-stringer_t)**2) # mm^2
+stringer_J = np.pi * stringer_t * (stringer_r)**3 * 2 # mm^4
+stringer_I = stringer_J / 2 # mm^4
+
+print(stringer_I)
+
+σ_normal = maximum_drag * model_factor / stringer_A
+σ_bending_lift = maximum_lift * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
+σ_bending_drag = maximum_drag * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
+σ_bending = np.sqrt(σ_bending_lift**2 + σ_bending_drag**2)
+τ = maximum_lift * model_factor * 0.25 * stringer_r / stringer_J
+
+von_mises_stringer = np.sqrt(σ_normal**2 - σ_normal*σ_bending + σ_bending**2 + 3*τ**2)
+
+print(f"Wing stringer stress: {von_mises_stringer:.2f} MPa")
+print(f"Stringer SF: {240 / von_mises_stringer:.2f}. Aluminium 6061 T6")
+print(f"Stringer thickness: {stringer_t} mm, stringer radius: {stringer_r} mm")
