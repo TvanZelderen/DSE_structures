@@ -11,7 +11,8 @@ rear_ski_width = 0.04 # m
 front_ski_length = 0.11 # m
 front_ski_width = 0.04 # m
 
-leg_length = 0.3265 # m
+rear_leg_length = 0.3265 # m
+front_leg_length = 0.1 # m
 drag_angle = np.deg2rad(120) # rad
 normal_angle = np.deg2rad(127.76) # rad
 
@@ -43,14 +44,16 @@ Ixx = np.pi * t * d**3 / 8
 A = np.pi * ((d/2)**2 - (d/2-t)**2)
 
 normal_stress = leg_normal_force / A
-deceleration_stress = deceleration_force * leg_length * d/2 / Ixx
-normal_stress = normal_force * leg_length * d/2 / Ixx
+deceleration_stress = deceleration_force * rear_leg_length * d/2 / Ixx
+normal_stress = normal_force * rear_leg_length * d/2 / Ixx
 
 stress = normal_stress + np.sqrt(deceleration_stress**2 + normal_stress**2) # Pa
 print(f"Stress: {stress/10**6:.2f} MPa")
-leg_volume = A * leg_length
-leg_mass = leg_volume * density_aluminium
-print(f"Leg mass: {leg_mass:.2f} kg")
+rear_leg_volume = A * rear_leg_length
+rear_leg_mass = rear_leg_volume * density_aluminium
+print(f"Leg mass: {rear_leg_mass:.2f} kg")
+front_leg_volume = A * front_leg_length
+front_leg_mass = front_leg_volume * density_aluminium
 
-total_mass = rear_ski_mass * 2 + front_ski_mass * 2 + leg_mass * 4
+total_mass = rear_ski_mass * 2 + front_ski_mass * 2 + rear_leg_mass * 2 + front_leg_mass * 2
 print(f"Total landing system mass: {total_mass:.3f} kg")
