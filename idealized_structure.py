@@ -8,11 +8,10 @@ A = np.pi * radius**2
 skin_thickness = 0.5  # mm
 n_stringers = 8
 unsupported_skin_length = (2 * np.pi * radius) / n_stringers
-stringer_area = 1 # mm^2
+stringer_area = 0 # mm^2
 
-neutral_line_offset = np.sin(np.deg2rad(30)) * radius
-# print(f"Neutral line offset: {neutral_line_offset}")
-# neutral_line_offset = 0
+offset = True
+neutral_line_offset = np.sin(np.deg2rad(30)) * radius if offset else 0
 d1 = np.sin(np.deg2rad(67.5)) * radius + neutral_line_offset
 d2 = np.sin(np.deg2rad(22.5)) * radius + neutral_line_offset
 d3 = np.sin(np.deg2rad(-22.5)) * radius + neutral_line_offset
@@ -29,8 +28,8 @@ d4_b = np.sin(np.deg2rad(-67.5)) * radius + radius
 model_factor = 1.5
 maximum_lift = 999  # N
 maximum_drag = 153  # N
-moment = maximum_lift * model_factor * forward_return_module_length / 1000 / 4  # Nm
-# moment = 855 * model_factor # Nm
+lift_moment = maximum_lift * model_factor * forward_return_module_length / 1000 / 4  # Nm
+drag_moment = maximum_drag * model_factor * 0.3 # Nm, this assumes drag is a point force at the quarter span. Both wings have this force applied.
 
 
 # Calculating the cross sectional area for the stringers
@@ -64,10 +63,17 @@ ixx_4 = b4 * (y4) ** 2  # mm^4
 ixx = (ixx_1 + ixx_2 + ixx_3 + ixx_4) * 2  # mm^4
 print(f"Ixx: {ixx}")
 
-σ1_moment = moment * y1 / ixx  # N/mm^2 aka MPa
-σ2_moment = moment * y2 / ixx  # N/mm^2
-σ3_moment = moment * y3 / ixx  # N/mm^2
-σ4_moment = moment * y4 / ixx  # N/mm^2
+iyy_1 = b1 * (x1) ** 2  # mm^4
+iyy_2 = b2 * (x2) ** 2  # mm^4
+iyy_3 = b3 * (x2) ** 2  # mm^4
+iyy_4 = b4 * (x1) ** 2  # mm^4
+iyy = (iyy_1 + iyy_2 + iyy_3 + iyy_4) * 2  # mm^4
+print(f"Iyy: {iyy}")
+
+σ1_moment = lift_moment * y1 / ixx + drag_moment * x1 / iyy # N/mm^2 aka MPa
+σ2_moment = lift_moment * y2 / ixx + drag_moment * x2 / iyy # N/mm^2
+σ3_moment = lift_moment * y3 / ixx + drag_moment * x2 / iyy # N/mm^2
+σ4_moment = lift_moment * y4 / ixx + drag_moment * x1 / iyy # N/mm^2
 σ = np.array([σ1_moment, σ2_moment, σ3_moment, σ4_moment])
 σ_max = np.max(np.abs(σ))
 print("y's, moments")
@@ -122,16 +128,19 @@ tau = max_q / skin_thickness  # N/mm^2
 
 von_mises = np.sqrt(σ_max**2 + 3 * tau**2)  # N/mm^2
 print(f"Skin stress: {von_mises:.2f} MPa")
-print(f"Skin SF: {240 / von_mises:.2f}. Aluminium 6061 T6")
+print(f"Skin SM: {240 / von_mises:.2f}. Aluminium 6061 T6")
 print(f"Skin thickness: {skin_thickness} mm\n")
 
-### Wing attachement stringers
+print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
 
-stringer_t = 1 # mm
-stringer_r = 12 # mm
-stringer_A = np.pi * (stringer_r**2 - (stringer_r-stringer_t)**2) # mm^2
-stringer_J = np.pi * stringer_t * (stringer_r)**3 * 2 # mm^4
-stringer_I = stringer_J / 2 # mm^4
+### Wing attachement stringers
+print("Wing attachement stringers")
+
+# stringer_t = 1 # mm
+# stringer_r = 12 # mm
+# stringer_A = np.pi * (stringer_r**2 - (stringer_r-stringer_t)**2) # mm^2
+# stringer_J = np.pi * stringer_t * (stringer_r)**3 * 2 # mm^4
+# stringer_I = stringer_J / 2 # mm^4
 
 square_l = 10 # mm
 square_t = 1 # mm
@@ -139,31 +148,32 @@ square_A = square_l**2 - (square_l-square_t*2)**2
 square_I = (square_l**4 - (square_l-square_t*2)**4) / 12
 square_J = (square_l**4 - (square_l-2*square_t)**4) / 6
 
-print(f"Area: {square_A/stringer_A}")
-print(f"Ixx: {square_I/stringer_I}")
+# print(f"Area: {square_A/stringer_A}")
+# print(f"Ixx: {square_I/stringer_I}")
 
-σ_normal = maximum_drag * model_factor / stringer_A
-σ_bending_lift = maximum_lift * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
-σ_bending_drag = maximum_drag * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
-σ_bending = np.sqrt(σ_bending_lift**2 + σ_bending_drag**2)
-τ = maximum_lift * model_factor * 0.25 * stringer_r / stringer_J
+# σ_normal = maximum_drag * model_factor / stringer_A
+# σ_bending_lift = maximum_lift * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
+# σ_bending_drag = maximum_drag * model_factor * forward_return_module_length / 4 * stringer_r / stringer_I
+# σ_bending = np.sqrt(σ_bending_lift**2 + σ_bending_drag**2)
+# τ = maximum_lift * model_factor * 0.25 * stringer_r / stringer_J
+
+# von_mises_stringer = np.sqrt(σ_normal**2 - σ_normal*σ_bending + σ_bending**2 + 3*τ**2)
+
+# print(f"Wing stringer stress: {von_mises_stringer:.2f} MPa")
+# print(f"Stringer SF: {240 / von_mises_stringer:.2f}. Aluminium 6061 T6")
+# print(f"Stringer thickness: {stringer_t} mm, stringer radius: {stringer_r} mm")
+
+σ_normal = maximum_drag / 2 * model_factor / square_A
+σ_bending_lift = maximum_lift / 2 * model_factor * forward_return_module_length / 4 * square_l / 2 / square_I
+σ_bending_drag = (maximum_drag*0.3) * model_factor * square_l / 2 / square_I
+σ_bending_wing_moment = (maximum_lift * 0.25 - 0.204) * model_factor * square_l / 2 / square_I                           # TODO: fill in torque for 1 wing, for fin comment out
+σ_bending = np.sqrt((σ_bending_lift+σ_bending_wing_moment)**2 + σ_bending_drag**2)
+τ = maximum_lift / 2 * model_factor * 0.25 * square_l / 2 / square_J
 
 von_mises_stringer = np.sqrt(σ_normal**2 - σ_normal*σ_bending + σ_bending**2 + 3*τ**2)
 
+# print(f"\nSquare:")
 print(f"Wing stringer stress: {von_mises_stringer:.2f} MPa")
-print(f"Stringer SF: {240 / von_mises_stringer:.2f}. Aluminium 6061 T6")
-print(f"Stringer thickness: {stringer_t} mm, stringer radius: {stringer_r} mm")
-
-σ_normal = maximum_drag * model_factor / square_A
-σ_bending_lift = maximum_lift * model_factor * forward_return_module_length / 4 * square_l / 2 / stringer_I
-σ_bending_drag = maximum_drag * model_factor * forward_return_module_length / 4 * square_l / 2 / stringer_I
-σ_bending = np.sqrt(σ_bending_lift**2 + σ_bending_drag**2)
-τ = maximum_lift * model_factor * 0.25 * square_l / 2 / square_J
-
-von_mises_stringer = np.sqrt(σ_normal**2 - σ_normal*σ_bending + σ_bending**2 + 3*τ**2)
-
-print(f"\nSquare:")
-print(f"Wing stringer stress: {von_mises_stringer:.2f} MPa")
-print(f"Stringer SF: {240 / von_mises_stringer:.2f}. Aluminium 6061 T6")
+print(f"Stringer SM: {240 / von_mises_stringer:.2f}. Aluminium 6061 T6")
 print(f"Stringer thickness: {square_t} mm, stringer side length: {square_l} mm")
 
